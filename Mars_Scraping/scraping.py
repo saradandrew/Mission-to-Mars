@@ -18,6 +18,7 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
+        "hemis": mars_hemispheres(browser)
         "last_modified": dt.datetime.now()
     }
 
@@ -93,6 +94,50 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def mars_hemispheres(browser):
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+    browser.is_element_present_by_css('div.list_text', wait_time=1)
+
+    img_urls = []
+
+    html = browser.html
+    main_page = soup(html, "html.parser")
+
+    h_links = main_page.find_all('div', class_="item")
+
+    for x in range(len(h_links)):
+    
+        hemis = {}
+        h_url = h_links[x].find('a')['href']
+
+        browser.visit(url + h_url)
+        new_html = browser.html
+        next_pg = soup(new_html, "html.parser")
+        
+        try:
+            t_header = next_pg.find_all('h2', class_="title")
+            title = t_header[0].text
+
+            full_img = next_pg.find_all('div', class_="downloads")  
+            img = full_img[0]('li')[0]('a')[0].get('href')
+            browser.visit(url + img)
+            new_html = browser.html
+            next_pg = soup(new_html, "html.parser")
+            img_url = next_pg.find('img').get('src')
+        
+        except AttributeError:
+            return None
+    
+        hemis['img_url'] = img_url
+        hemis['title'] = title
+
+        img_urls.append(hemis)
+        browser.back()
+        browser.back()
+
+    return img_urls
 
 if __name__ == "__main__":
 
